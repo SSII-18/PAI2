@@ -1,5 +1,5 @@
 import socket
-from transacciones import mensaje_transaccion
+from transacciones import mensaje_transaccion, check_mensaje, get_cantidad
 
 # Se crea objeto socket
 s = socket.socket()
@@ -10,16 +10,38 @@ port = 31415
 # Se unen el nombre de la maquina y el puerto
 s.bind((host, port))
 
+dinero = 1000
+
 # Se espera a que el cliente se conecte
 s.listen(5)
 while True:
     # connection es un nuevo socket para mandar y recibir. address es la direccion del otro socket en la conexion
     connection, address = s.accept()
-    print('Se ha conectado ', address)
-    connection.send(mensaje_transaccion('Mi cuenta', 'Tu cuenta', 100))
-    print('Se ha enviado el mensaje')
+    rec = ''
+    rec = connection.recv(1024)
+    if rec:
+        check = check_mensaje(rec)
+        if check:
+            local_dinero = dinero
+            dinero = local_dinero + get_cantidad(rec)
+        print('Se ha recibido el mensaje')
+        print('Dinero en cuenta : ' + str(dinero))
+        print(rec)
     break
-while True:
-    pass
 connection.close()
-    
+s.listen(5)
+connection, address = s.accept()
+while True:
+    print(dinero)
+    # connection es un nuevo socket para mandar y recibir. address es la direccion del otro socket en la conexion
+    rec = ''
+    rec = connection.recv(1024)
+    if rec:
+        check = check_mensaje(rec)
+        if check:
+            local_dinero = dinero
+            dinero = local_dinero + get_cantidad(rec)
+        print('Se ha recibido el mensaje')
+        print('Dinero en cuenta : ' + str(dinero))
+        print(rec)
+connection.close()
