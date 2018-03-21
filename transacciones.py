@@ -2,6 +2,10 @@ from hashlib import sha1
 from hmac import new
 from base64 import b64encode
 from random import _urandom, Random
+from Crypto.PublicKey import RSA
+
+# Digital signature #
+# https://stackoverflow.com/questions/4232389/signing-and-verifying-data-using-pycrypto-rsa #
 
 clave = _urandom(8)
 
@@ -27,13 +31,15 @@ def get_cantidad(mensaje):
 def generate_nonces(used_nonces):
     random = Random()
     while True:
-        nonce = random.randint(1000, 9999)
-        if nonce in used_nonces:
+        nonce = random.randint(1, pow(2, 16)-1)
+        if not nonce in used_nonces:
             break
     return nonce
-    
-msg = mensaje_transaccion('fuente', 'destino', 100, 1234) 
-print(msg)
-print(check_mensaje(msg, 1234))
-    
+
+def generar_claves_firma():
+    public_key = RSA.generate(2048)
+    print(public_key)
+
+def generar_firma():
+    pass
 
