@@ -6,6 +6,8 @@ s = socket.socket()
 host = socket.gethostbyaddr('127.0.0.1')[0]
 print(socket.gethostbyname(socket.getfqdn()))
 port = 31415
+nonces = []
+used_nonces = []
 
 mensaje_replay = b'Mi cuenta, Tu cuenta, 100, VFGkcxO7MTUpxTkeTyhbw6giXnE='
 

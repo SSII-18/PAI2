@@ -5,6 +5,8 @@ s = socket.socket()
 host = socket.gethostbyaddr('127.0.0.1')[0]
 print(socket.gethostbyname(socket.getfqdn()))
 port = 31415
+nonces = []
+used_nonces = []
 
 s.connect((host, port))
 print('Se ha conectado')

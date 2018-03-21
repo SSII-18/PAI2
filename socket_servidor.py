@@ -9,8 +9,11 @@ host = socket.gethostbyaddr('127.0.0.1')[0]
 port = 31415
 # Se unen el nombre de la maquina y el puerto
 s.bind((host, port))
+nonces = []
+used_nonces = []
 
 dinero = 1000
+
 
 # Se espera a que el cliente se conecte
 s.listen(5)
