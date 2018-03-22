@@ -63,6 +63,13 @@ while True:
         if check:
             local_dinero = dinero
             dinero = local_dinero + get_cantidad(rec)
+            # Se manda confirmacion #
+            connection.send(b'Transaccion confirmada')
+        else:
+            # Se manda un mensaje de error y  se notifica en log #
+            connection.send(b'Se ha producido un ataque')
+            with open("log.txt", 'w') as log:
+                log.write(rec.decode() + '\r\n')
         print('Se ha recibido el mensaje')
         print('Dinero en cuenta : ' + str(dinero))
         print(rec)
@@ -114,8 +121,13 @@ while True:
         if check:
             local_dinero = dinero
             dinero = local_dinero + get_cantidad(rec)
+            # Se manda confirmacion #
+            connection.send(b'Transaccion confirmada')
         else:
-            print('Se ha detectado un ataque')
+            # Se manda un mensaje de error y  se notifica en log #
+            connection.send(b'Se ha producido un ataque')
+            with open("log.txt", 'w') as log:
+                log.write(rec.decode() + '\r\n')
         print('Se ha recibido el mensaje')
         print('Dinero en cuenta : ' + str(dinero))
         print(rec)

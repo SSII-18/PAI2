@@ -52,6 +52,13 @@ while True:
     s.send(mensaje_local)
     print('Se ha enviado el mensaje')
     break
+# Se espera confirmacion #
+while True:
+    rec = ''
+    rec = s.recv(1024)
+    if rec:
+        print(rec.decode())
+        break
 s.close()
 
 
@@ -95,4 +102,11 @@ while True:
     s.send(mensaje)
     print('Se ha enviado el mensaje')
     break
+# Se espera confirmacion #
+while True:
+    rec = ''
+    rec = s.recv(1024)
+    if rec:
+        print(rec.decode())
+        break
 s.close()
