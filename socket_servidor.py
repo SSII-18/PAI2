@@ -1,9 +1,9 @@
 import socket
-from transacciones import check_mensaje, get_cantidad, generate_nonces,\
-    generar_claves_firma
+from transacciones import check_mensaje, get_cantidad, generate_nonces
 from time import sleep
 import sys
-from Crypto.PublicKey import RSA
+
+from KPI import generateKPI
 
 def checkMensajes(j): 
     global dinero
@@ -17,31 +17,28 @@ def checkMensajes(j):
         print("Dinero en la cuenta "+str(dinero))
         rec = ''
         rec = connection.recv(1024)
-        print("Se ha recibido el mensaje "+rec.decode())
+        print "Se ha recibido el mensaje "+rec
         
         if rec:
-            check = check_mensaje(rec, nonces[0], clave_publica_cliente)
+            check = check_mensaje(rec, nonces[0])
             mensajesTotales += 1
             if check:
                 local_dinero = dinero
                 dinero = local_dinero + get_cantidad(rec)
                 mensajesIntegros += 1
-                connection.send(b'Transaccion confirmada')
-                
+    
             else:
-                print (sys.stderr, 'Se ha detectado un ataque, mensaje '+rec+" descartado")
+                print >>sys.stderr, 'Se ha detectado un ataque, mensaje '+rec+" descartado"
                 mensajesNoIntegros += 1
-                # Se manda un mensaje de error y  se notifica en log #
-                connection.send(b'Se ha producido un ataque')
-                with open("log.txt", 'w') as log:
-                    log.write(rec.decode() + '\r\n')
-                
+		with open('log.txt', 'a') as log:
+                	log.write(rec.decode() + '\r\n')
+			log.close()
+
             print('Dinero en cuenta : ' + str(dinero)+"\n")
             
         if (i == j):
             break
-
-
+        
 # Se crea objeto socket
 s = socket.socket()
 
@@ -66,6 +63,7 @@ mensajesNoIntegros = 0
 
 # Se espera a que el cliente se conecte
 s.listen(5)
+print "----------Esperando conexion del cliente-----------"
 
 # connection es un nuevo socket para mandar y recibir. address es la direccion del otro socket en la conexion
 connection, address = s.accept()
@@ -86,28 +84,15 @@ while True:
         print('Se ha recibido el nonce del cliente : ' + str(nonce_cliente))
         break
     
-# El servidor manda su clave publica al cliente #
-clave_privada_servidor, clave_publica_servidor = generar_claves_firma()
-export_publica = clave_publica_servidor.exportKey('DER')
-connection.send(export_publica)
-
-# El servidor recibe la clave publica del cliente #
-while True:
-    rec = ''
-    rec = connection.recv(10240)
-    if rec:
-        print(rec)
-        clave_publica_cliente = RSA.importKey(rec)
-        print('Se ha recibido la clave publica del cliente : ' + str(clave_publica_cliente))
-        break
-    
 # El servidor recibe el mensaje del cliente #
 checkMensajes(1)
-
+    
 # Antes de cerrar la conexion, se marca el nonce del servidor como usado #
 used_nonces.append(nonces[0])
 connection.close()
 sleep(5)
+
+print "--------------Un atacante ha interceptado la conexion-----------------"
 
 # Se abre una nueva conexion #
 s = socket.socket()
@@ -117,7 +102,10 @@ s.bind((host, port))
 s.listen(20)
 connection, address = s.accept()
 
-# El servidor recibe el mensaje #
 checkMensajes(2)
-
+        
 connection.close()
+
+generateKPI(mensajesIntegros, mensajesNoIntegros, mensajesTotales)
+
+
