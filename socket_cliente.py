@@ -14,8 +14,8 @@ clave_privada_cliente = None
 clave_publica_cliente = None
 clave_publica_servidor = None
 
-
 s.connect((host, port))
+print('-----------------Estableciendo conexion como cliente-----------------')
 print('Se ha conectado')
 # Recibe el nonce del servidor #
 while True:
@@ -59,13 +59,16 @@ while True:
     if rec:
         print(rec.decode())
         break
+nonce_serv = nonces[1]
 s.close()
+print('Conexion cerrada')
 
 
 
-sleep(7)
+sleep(10)
 # Se abre una nueva conexion #
 s = socket.socket()
+print('---------------Interceptando la conexion como atacante--------------------')
 # A partir de aqui el cliente es el hacker  #
 s.connect((host, port))
 print('Se ha conectado')
@@ -74,11 +77,10 @@ while True:
     rec = ''
     rec = s.recv(1024)
     if rec:
-        nonce_serv = int(rec.decode())
-        if nonce_serv:
-            nonces[1] = nonce_serv
-        print('Se ha recibido el nonce del servidor : ' + str(nonce_serv))
-        break
+        nonces[1] = int(rec.decode())
+        if nonces[1]:
+            print('Se ha recibido el nonce del servidor : ' + str(nonces[1]))
+            break
 # Genera y manda su nonce al servidor #
 sleep(5)
 nonces[0] = generate_nonces(used_nonces)
@@ -99,9 +101,11 @@ s.send(export_publica)
 sleep(5)
 # Manda el mensaje al servidor #
 while True:
-    s.send(mensaje)
-    print('Se ha enviado el mensaje')
-    break
+    print ("Enviando mensaje para simular ataque de replay")
+    print ("Dicho mensaje es el mismo que el enviado anteriormente, con el mismo nonce")
+    mensajeReplay = 'Mi cuenta, Tu cuenta, 100, '+ nonce_serv
+    s.send(mensajeReplay)
+    print('Se ha enviado el mensaje '+mensajeReplay+"\n")
 # Se espera confirmacion #
 while True:
     rec = ''
@@ -109,4 +113,19 @@ while True:
     if rec:
         print(rec.decode())
         break
+# Manda mensaje al servidor    
+while True:
+    print ("Enviando mensaje para simular ataque de MITM")
+    print ("Dicho mensaje es distinto que el enviado anteriormente, con el mismo nonce")
+    mensajeMITM = 'Mi cuenta, Tu cuenta, 100000, '+nonce_serv
+    s.send(mensajeMITM)
+    print('Se ha enviado el mensaje '+mensajeMITM)
+# Se espera confirmacion #
+while True:
+    rec = ''
+    rec = s.recv(1024)
+    if rec:
+        print(rec.decode())
+        break
+
 s.close()

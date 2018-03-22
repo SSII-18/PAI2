@@ -2,7 +2,45 @@ import socket
 from transacciones import check_mensaje, get_cantidad, generate_nonces,\
     generar_claves_firma
 from time import sleep
+import sys
 from Crypto.PublicKey import RSA
+
+
+def checkMensajes(j): 
+    global dinero
+    global mensajesIntegros
+    global mensajesTotales
+    global mensajesNoIntegros
+    
+    i = 0  
+    while True:
+        i+=1
+        print("Dinero en la cuenta "+str(dinero))
+        rec = ''
+        rec = connection.recv(1024)
+        print("Se ha recibido el mensaje "+rec.decode())
+        
+        if rec:
+            check = check_mensaje(rec, nonces[0], clave_publica_cliente)
+            mensajesTotales += 1
+            if check:
+                local_dinero = dinero
+                dinero = local_dinero + get_cantidad(rec)
+                mensajesIntegros += 1
+                connection.send(b'Transaccion confirmada')
+                
+            else:
+                print (sys.stderr, 'Se ha detectado un ataque, mensaje '+rec+" descartado")
+                mensajesNoIntegros += 1
+                # Se manda un mensaje de error y  se notifica en log #
+                connection.send(b'Se ha producido un ataque')
+                with open("log.txt", 'w') as log:
+                    log.write(rec.decode() + '\r\n')
+                
+            print('Dinero en cuenta : ' + str(dinero)+"\n")
+            
+        if (i == j):
+            break
 
 
 # Se crea objeto socket
@@ -20,7 +58,9 @@ clave_publica_cliente = None
 clave_publica_servidor = None
 
 dinero = 1000
-
+mensajesTotales = 0
+mensajesIntegros = 0
+mensajesNoIntegros = 0
 
 # Se espera a que el cliente se conecte
 s.listen(5)
@@ -54,30 +94,12 @@ while True:
         print('Se ha recibido la clave publica del cliente : ' + str(clave_publica_cliente))
         break
 # El servidor recibe el mensaje del cliente #
-while True:
-    rec = ''
-    rec = connection.recv(1024)
-    if rec:
-        print(clave_publica_cliente)
-        check = check_mensaje(rec, nonces[0], clave_publica_cliente)
-        if check:
-            local_dinero = dinero
-            dinero = local_dinero + get_cantidad(rec)
-            # Se manda confirmacion #
-            connection.send(b'Transaccion confirmada')
-        else:
-            # Se manda un mensaje de error y  se notifica en log #
-            connection.send(b'Se ha producido un ataque')
-            with open("log.txt", 'w') as log:
-                log.write(rec.decode() + '\r\n')
-        print('Se ha recibido el mensaje')
-        print('Dinero en cuenta : ' + str(dinero))
-        print(rec)
-        break
+checkMensajes(1)
 # Antes de cerrar la conexion, se marca el nonce del servidor como usado #
 used_nonces.append(nonces[0])
 nonces = [None, None]
 connection.close()
+sleep(5)
 
 # Se abre una nueva conexion #
 s = socket.socket()
@@ -112,24 +134,6 @@ while True:
         print('Se ha recibido la clave publica del cliente : ' + str(clave_publica_cliente))
         break
 # El servidor recibe el mensaje #
-while True:
-    print(dinero)
-    rec = ''
-    rec = connection.recv(1024)
-    if rec:
-        check = check_mensaje(rec, nonces[0], clave_publica_cliente)
-        if check:
-            local_dinero = dinero
-            dinero = local_dinero + get_cantidad(rec)
-            # Se manda confirmacion #
-            connection.send(b'Transaccion confirmada')
-        else:
-            # Se manda un mensaje de error y  se notifica en log #
-            connection.send(b'Se ha producido un ataque')
-            with open("log.txt", 'w') as log:
-                log.write(rec.decode() + '\r\n')
-        print('Se ha recibido el mensaje')
-        print('Dinero en cuenta : ' + str(dinero))
-        print(rec)
-        break
+checkMensajes(2)
+
 connection.close()
