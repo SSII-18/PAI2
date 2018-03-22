@@ -1,6 +1,7 @@
 import socket
-from transacciones import mensaje_transaccion, generate_nonces
+from transacciones import mensaje_transaccion, generate_nonces, generar_claves_firma
 from time import sleep
+from Crypto.PublicKey import RSA
 
 s = socket.socket()
 host = socket.gethostbyaddr('127.0.0.1')[0]
@@ -9,6 +10,10 @@ nonces = [None, None]
 used_nonces = []
 nonce_cliente = None
 mensaje = b''
+clave_privada_cliente = None
+clave_publica_cliente = None
+clave_publica_servidor = None
+
 
 s.connect((host, port))
 print('Se ha conectado')
@@ -26,9 +31,23 @@ while True:
 nonces[0] = generate_nonces(used_nonces)
 sleep(5)
 s.send(bytes(str(nonces[0]).encode('ascii')))
+# Recibe la clave publica del servidor #
+while True:
+    rec = ''
+    rec = s.recv(10240)
+    if rec:
+        print(rec)
+        clave_publica_servidor = RSA.importKey(rec)
+        print('Se ha recibido la clave publica del servidor : ' + str(clave_publica_servidor))
+        break
+# Genera sus claves y manda su clave publica al servidor #
+clave_privada_cliente, clave_publica_cliente = generar_claves_firma()
+export_publica = clave_publica_cliente.exportKey('DER')
+s.send(export_publica)
+sleep(5)
 # Manda el mensaje al servidor #
 while True:
-    mensaje_local = mensaje_transaccion('Mi cuenta', 'Tu cuenta', 100, nonces[1])
+    mensaje_local = mensaje_transaccion('Mi cuenta', 'Tu cuenta', 100, nonces[1], clave_privada_cliente)
     mensaje = mensaje_local
     s.send(mensaje_local)
     print('Se ha enviado el mensaje')
@@ -57,6 +76,19 @@ while True:
 sleep(5)
 nonces[0] = generate_nonces(used_nonces)
 s.send(bytes(str(nonces[0]).encode('ascii')))
+# Recibe la clave publica del servidor #
+while True:
+    rec = ''
+    rec = s.recv(10240)
+    if rec:
+        print(rec)
+        clave_publica_servidor = RSA.importKey(rec)
+        print('Se ha recibido la clave publica del servidor : ' + str(clave_publica_servidor))
+        break
+# Genera sus claves y manda su clave publica al servidor #
+clave_privada_cliente, clave_publica_cliente = generar_claves_firma()
+export_publica = clave_publica_cliente.exportKey('DER')
+s.send(export_publica)
 sleep(5)
 # Manda el mensaje al servidor #
 while True:

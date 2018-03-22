@@ -1,6 +1,9 @@
 import socket
-from transacciones import check_mensaje, get_cantidad, generate_nonces
+from transacciones import check_mensaje, get_cantidad, generate_nonces,\
+    generar_claves_firma
 from time import sleep
+from Crypto.PublicKey import RSA
+
 
 # Se crea objeto socket
 s = socket.socket()
@@ -12,6 +15,9 @@ port = 31415
 s.bind((host, port))
 nonces = [None, None]
 used_nonces = []
+clave_privada_servidor = None
+clave_publica_cliente = None
+clave_publica_servidor = None
 
 dinero = 1000
 
@@ -34,12 +40,26 @@ while True:
             nonces[1] = nonce_cliente
         print('Se ha recibido el nonce del cliente : ' + str(nonce_cliente))
         break
+# El servidor manda su clave publica al cliente #
+clave_privada_servidor, clave_publica_servidor = generar_claves_firma()
+export_publica = clave_publica_servidor.exportKey('DER')
+connection.send(export_publica)
+# El servidor recibe la clave publica del cliente #
+while True:
+    rec = ''
+    rec = connection.recv(10240)
+    if rec:
+        print(rec)
+        clave_publica_cliente = RSA.importKey(rec)
+        print('Se ha recibido la clave publica del cliente : ' + str(clave_publica_cliente))
+        break
 # El servidor recibe el mensaje del cliente #
 while True:
     rec = ''
     rec = connection.recv(1024)
     if rec:
-        check = check_mensaje(rec, nonces[0])
+        print(clave_publica_cliente)
+        check = check_mensaje(rec, nonces[0], clave_publica_cliente)
         if check:
             local_dinero = dinero
             dinero = local_dinero + get_cantidad(rec)
@@ -71,12 +91,26 @@ while True:
             nonces[1] = nonce_cliente
         print('Se ha recibido el nonce del cliente : ' + str(nonce_cliente))
         break
+# El servidor manda su clave publica al cliente #
+clave_privada_servidor, clave_publica_servidor = generar_claves_firma()
+export_publica = clave_publica_servidor.exportKey('DER')
+connection.send(export_publica)
+# El servidor recibe la clave publica del cliente #
+while True:
+    rec = ''
+    rec = connection.recv(10240)
+    if rec:
+        print(rec)
+        clave_publica_cliente = RSA.importKey(rec)
+        print('Se ha recibido la clave publica del cliente : ' + str(clave_publica_cliente))
+        break
+# El servidor recibe el mensaje #
 while True:
     print(dinero)
     rec = ''
     rec = connection.recv(1024)
     if rec:
-        check = check_mensaje(rec, nonces[0])
+        check = check_mensaje(rec, nonces[0], clave_publica_cliente)
         if check:
             local_dinero = dinero
             dinero = local_dinero + get_cantidad(rec)
